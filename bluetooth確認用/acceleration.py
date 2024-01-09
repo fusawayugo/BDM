@@ -1,8 +1,28 @@
 from bleak import BleakScanner, BleakClient
 import asyncio
 import pyautogui as pg
+import sys
+import matplotlib.pyplot as plt
 
-target_address = "C2783BD9-2103-65E8-DF49-0F483733120E"  # 加速度データを持つデバイスのMACアドレス
+
+sys.path.append('../')
+from function import byte_to_xacc
+
+
+async def scroll(x):
+    a_sc=-(x+1000)/200
+    pg.scroll(-(x+1000)/200)
+    print(a_sc)
+    #print(x)
+    pass
+
+
+input_count=0
+
+#target_address = "C2783BD9-2103-65E8-DF49-0F483733120E" 
+target_address = "35B067D2-43F1-D6ED-2CC4-BA5761D51DB0" # 加速度データを持つデバイスのMACアドレス
+
+
 
 UUID_ACCELEROMETER_SERVICE = "e95d0753-251d-470a-a062-fa1922dfa9a8"
 UUID_ACCELEROMETER_DATA = "e95dca4b-251d-470a-a062-fa1922dfa9a8"
@@ -36,13 +56,14 @@ async def get_acceleration():
                 if accelerometer_service:
                     data_char = accelerometer_service.get_characteristic(UUID_ACCELEROMETER_DATA)
 
-                    def acceleration_handler(sender, data):
-                        x = data[0]  # Assuming data format is [x, y, z] bytes
-                        y = data[1]
-                        z = data[2]
+                    async def acceleration_handler(sender, data):
+                        global input_count
+                        x=byte_to_xacc(data)
                         # Process acceleration data here  
-                        print(f"Acceleration: X={x}, Y={y}, Z={z}")
-                        pg.scroll(y)
+                        #print(f"Acceleration: X={x}, Y={y}, Z={z},count={input_count}")
+                        if input_count%10==0:
+                            await scroll(x)
+                        input_count+=1
                     
                     await client.start_notify(data_char, acceleration_handler)
 
@@ -64,3 +85,5 @@ async def get_acceleration():
 
 if __name__ == "__main__":
     asyncio.run(get_acceleration())
+
+
