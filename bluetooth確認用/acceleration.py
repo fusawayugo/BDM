@@ -1,5 +1,6 @@
 from bleak import BleakScanner, BleakClient
 import asyncio
+import pyautogui as pg
 
 target_address = "C2783BD9-2103-65E8-DF49-0F483733120E"  # 加速度データを持つデバイスのMACアドレス
 
@@ -39,9 +40,10 @@ async def get_acceleration():
                         x = data[0]  # Assuming data format is [x, y, z] bytes
                         y = data[1]
                         z = data[2]
-                        # Process acceleration data here
+                        # Process acceleration data here  
                         print(f"Acceleration: X={x}, Y={y}, Z={z}")
-
+                        pg.scroll(y)
+                    
                     await client.start_notify(data_char, acceleration_handler)
 
                     while True:
