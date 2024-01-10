@@ -3,6 +3,7 @@ import asyncio
 import pyautogui as pg
 import sys
 import matplotlib.pyplot as plt
+from time import sleep
 
 
 sys.path.append('../')
@@ -11,9 +12,9 @@ from function import byte_to_xacc
 
 async def scroll(x):
     a_sc=-(x+1000)/200
-    pg.scroll(-(x+1000)/200)
-    print(a_sc)
-    #print(x)
+    if abs(a_sc)>1:
+        pg.scroll(int(a_sc))
+        print(a_sc,int(a_sc))
     pass
 
 
@@ -42,10 +43,6 @@ async def get_acceleration():
                 await client.connect()
                 services = client.services
 
-                # print("Services available:")
-                # for service in services:
-                #     print(service)
-
                 accelerometer_service = None
                 for service in services:
                     if service.uuid == UUID_ACCELEROMETER_SERVICE:
@@ -53,6 +50,7 @@ async def get_acceleration():
                         break
 
                 if accelerometer_service:
+                    '''
                     data_char = accelerometer_service.get_characteristic(UUID_ACCELEROMETER_DATA)
 
                     async def acceleration_handler(sender, data):
@@ -68,7 +66,18 @@ async def get_acceleration():
                             await asyncio.sleep(1)
                         except KeyboardInterrupt:
                             await client.stop_notify(data_char)
-                            break      
+                            break
+                    '''
+                    while True:
+                        try:
+                            data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
+                            x=byte_to_xacc(data)
+                            asyncio.create_task(scroll(x))
+                            sleep(0.05)
+                        except KeyboardInterrupt:
+                            await client.stop_notify(data)
+                            break  
+
                 else:
                     print("Accelerometer service not found.")
                     await client.disconnect()
