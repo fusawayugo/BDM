@@ -17,7 +17,6 @@ async def scroll(x):
     pass
 
 
-input_count=0
 
 #target_address = "C2783BD9-2103-65E8-DF49-0F483733120E" 
 target_address = "35B067D2-43F1-D6ED-2CC4-BA5761D51DB0" # 加速度データを持つデバイスのMACアドレス
@@ -57,13 +56,10 @@ async def get_acceleration():
                     data_char = accelerometer_service.get_characteristic(UUID_ACCELEROMETER_DATA)
 
                     async def acceleration_handler(sender, data):
-                        global input_count
                         x=byte_to_xacc(data)
                         # Process acceleration data here  
                         #print(f"Acceleration: X={x}, Y={y}, Z={z},count={input_count}")
-                        if input_count%10==0:
-                            await scroll(x)
-                        input_count+=1
+                        await scroll(x)
                     
                     await client.start_notify(data_char, acceleration_handler)
 
@@ -72,8 +68,7 @@ async def get_acceleration():
                             await asyncio.sleep(1)
                         except KeyboardInterrupt:
                             await client.stop_notify(data_char)
-                            break
-
+                            break      
                 else:
                     print("Accelerometer service not found.")
                     await client.disconnect()
