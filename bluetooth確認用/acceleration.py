@@ -19,13 +19,18 @@ async def scroll(x):
 
 
 
-#target_address = "C2783BD9-2103-65E8-DF49-0F483733120E" 
-target_address = "35B067D2-43F1-D6ED-2CC4-BA5761D51DB0" # 加速度データを持つデバイスのMACアドレス
+target_address = "C2783BD9-2103-65E8-DF49-0F483733120E" 
+# target_address = "35B067D2-43F1-D6ED-2CC4-BA5761D51DB0" # 加速度データを持つデバイスのMACアドレス
 
 
 
 UUID_ACCELEROMETER_SERVICE = "e95d0753-251d-470a-a062-fa1922dfa9a8"
 UUID_ACCELEROMETER_DATA = "e95dca4b-251d-470a-a062-fa1922dfa9a8"
+
+UUID_BUTTON_SERVICE =  "e95d9882-251d-470a-a062-fa1922dfa9a8"
+UUID_BUTTON_ASTATE =  "e95dda90-251d-470a-a062-fa1922dfa9a8"
+UUID_BUTTON_BSTATE =  "e95dda91-251d-470a-a062-fa1922dfa9a8"
+
 
 async def get_acceleration():
     scanner = BleakScanner()
