@@ -1,28 +1,17 @@
 from bleak import BleakScanner, BleakClient
 import asyncio
 import pyautogui as pg
-import sys
 import matplotlib.pyplot as plt
+import numpy as np
 from time import sleep
+from function import byte_to_acc,scroll
 
 
-sys.path.append('../')
-from function import byte_to_xacc
-
-
-async def scroll(x):
-    a_sc=-(x+1000)/200
-    if abs(a_sc)>1:
-        pg.scroll(int(a_sc))
-        print(a_sc,int(a_sc))
-    pass
 
 
 
 target_address = "C2783BD9-2103-65E8-DF49-0F483733120E" 
 target_address = "35B067D2-43F1-D6ED-2CC4-BA5761D51DB0"
-
-
 
 UUID_ACCELEROMETER_SERVICE = "e95d0753-251d-470a-a062-fa1922dfa9a8"
 UUID_ACCELEROMETER_DATA = "e95dca4b-251d-470a-a062-fa1922dfa9a8"
@@ -31,8 +20,9 @@ UUID_BUTTON_SERVICE =  "e95d9882-251d-470a-a062-fa1922dfa9a8"
 UUID_BUTTON_ASTATE =  "e95dda90-251d-470a-a062-fa1922dfa9a8"
 UUID_BUTTON_BSTATE =  "e95dda91-251d-470a-a062-fa1922dfa9a8"
 
+a_state=0
 
-async def get_acceleration():
+async def main():
     scanner = BleakScanner()
     devices = await scanner.discover()
 
@@ -49,42 +39,51 @@ async def get_acceleration():
                 services = client.services
 
                 accelerometer_service = None
+                button_service = None
+                s1=0
                 for service in services:
                     if service.uuid == UUID_ACCELEROMETER_SERVICE:
                         accelerometer_service = service
+                        s1+=1
+                    elif service.uuid == UUID_BUTTON_SERVICE:
+                        button_service = service
+                        s1+=1
+                    if s1==2:
                         break
 
-                if accelerometer_service:
-                    '''
-                    data_char = accelerometer_service.get_characteristic(UUID_ACCELEROMETER_DATA)
-
-                    async def acceleration_handler(sender, data):
-                        x=byte_to_xacc(data)
-                        # Process acceleration data here  
-                        #print(f"Acceleration: X={x}, Y={y}, Z={z},count={input_count}")
-                        await scroll(x)
-                    
-                    await client.start_notify(data_char, acceleration_handler)
-
+                if button_service:
+                    #Aボタンを使う
+                    a_data = button_service.get_characteristic(UUID_BUTTON_ASTATE)
+                    async def change_a_state(sender,data):
+                        global a_state
+                        a_state=int.from_bytes(data)
+                    await client.start_notify(a_data,change_a_state)
                     while True:
                         try:
-                            await asyncio.sleep(1)
+                            if a_state>=1:
+                                break
+                            else:
+                                await asyncio.sleep(0.03)
                         except KeyboardInterrupt:
-                            await client.stop_notify(data_char)
+                            await client.stop_notify(a_data)
                             break
-                    '''
+
+                if accelerometer_service:
+                    data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
+                    initial_x,initial_y,initial_z=byte_to_acc(data)
+                    initial_theta=np.arctan2(-initial_z,-initial_x)
                     while True:
                         try:
                             data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
-                            x=byte_to_xacc(data)
-                            asyncio.create_task(scroll(x))
-                            sleep(0.05)
+                            x,y,z=byte_to_acc(data)
+                            asyncio.create_task(scroll(x,z,initial_theta))
+                            await asyncio.sleep(0.05)
                         except KeyboardInterrupt:
-                            await client.stop_notify(data) #いらないかも
+                            await client.stop_notify(a_data)
+                            #await client.stop_notify(data)
                             break  
-
                 else:
-                    print("Accelerometer service not found.")
+                    print("service not found.")
                     await client.disconnect()
             except Exception as e:
                 print(f"Error: {e}")
@@ -93,6 +92,4 @@ async def get_acceleration():
         print("Target device not found.")
 
 if __name__ == "__main__":
-    asyncio.run(get_acceleration())
-
-
+    asyncio.run(main())
