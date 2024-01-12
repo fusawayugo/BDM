@@ -17,8 +17,15 @@ def byte_to_xacc(array):
     return x
 
 
-async def scroll(x,z,theta0):
+async def tan_scroll(x,z,theta0):
     theta=np.arctan2(-z,-x)
-    pg.scroll((theta-theta0)*3)
+    a=0
+    if theta-theta0<-np.pi:
+        a=2*np.pi
+    elif theta-theta0>np.pi:
+        a=-2*np.pi
+    sc=int((theta-theta0+a)*3)
+    print(theta,theta0)
+    pg.scroll(sc)
 
 

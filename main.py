@@ -4,7 +4,7 @@ import pyautogui as pg
 import matplotlib.pyplot as plt
 import numpy as np
 from time import sleep
-from function import byte_to_acc,scroll
+from function import byte_to_acc,tan_scroll
 
 
 
@@ -20,7 +20,7 @@ UUID_BUTTON_SERVICE =  "e95d9882-251d-470a-a062-fa1922dfa9a8"
 UUID_BUTTON_ASTATE =  "e95dda90-251d-470a-a062-fa1922dfa9a8"
 UUID_BUTTON_BSTATE =  "e95dda91-251d-470a-a062-fa1922dfa9a8"
 
-a_state=0
+A_STATE=0
 
 async def main():
     scanner = BleakScanner()
@@ -54,20 +54,30 @@ async def main():
                 if button_service:
                     #Aボタンを使う
                     a_data = button_service.get_characteristic(UUID_BUTTON_ASTATE)
-                    async def change_a_state(sender,data):
-                        global a_state
-                        a_state=int.from_bytes(data)
-                    await client.start_notify(a_data,change_a_state)
+                    async def change_A_STATE(sender,data):
+                        global A_STATE
+                        A_STATE=int.from_bytes(data)
+                    await client.start_notify(a_data,change_A_STATE)
+                    print('push A-button')
                     while True:
                         try:
-                            if a_state>=1:
+                            if A_STATE>=1:
                                 break
                             else:
                                 await asyncio.sleep(0.03)
                         except KeyboardInterrupt:
                             await client.stop_notify(a_data)
                             break
-
+                    
+                    while True:
+                        try:
+                            if A_STATE==0:
+                                break
+                            else:
+                                await asyncio.sleep(0.03)
+                        except KeyboardInterrupt:
+                            await client.stop_notify(a_data)
+                            break
                 if accelerometer_service:
                     data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
                     initial_x,initial_y,initial_z=byte_to_acc(data)
@@ -76,8 +86,11 @@ async def main():
                         try:
                             data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
                             x,y,z=byte_to_acc(data)
-                            asyncio.create_task(scroll(x,z,initial_theta))
+                            asyncio.create_task(tan_scroll(x,z,initial_theta))
                             await asyncio.sleep(0.05)
+                            if A_STATE!=0:
+                                await client.stop_notify(a_data)
+                                break
                         except KeyboardInterrupt:
                             await client.stop_notify(a_data)
                             #await client.stop_notify(data)
