@@ -6,10 +6,6 @@ import numpy as np
 from time import sleep
 from function import byte_to_acc,tan_scroll
 
-
-
-
-
 target_address = "C2783BD9-2103-65E8-DF49-0F483733120E" 
 target_address = "35B067D2-43F1-D6ED-2CC4-BA5761D51DB0"
 
@@ -21,6 +17,31 @@ UUID_BUTTON_ASTATE =  "e95dda90-251d-470a-a062-fa1922dfa9a8"
 UUID_BUTTON_BSTATE =  "e95dda91-251d-470a-a062-fa1922dfa9a8"
 
 A_STATE=0
+LAST_A_STATE=0
+B_STATE=0
+SCROLL_ON=0
+
+async def scroll(client):
+    global SCROLL_ON
+    init=1
+    initial_theta=0
+    while True: 
+        try:
+            data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
+            if SCROLL_ON:
+                if init==1:
+                    initial_x,initial_y,initial_z=byte_to_acc(data)
+                    initial_theta=np.arctan2(-initial_z,-initial_x)
+                    init=0
+                else:
+                    x,y,z=byte_to_acc(data)
+                    asyncio.create_task(tan_scroll(x,z,initial_theta))
+            else:
+                init=1
+            await asyncio.sleep(0.05)
+        except Exception as e:
+                print(f"Error: {e}")
+    
 
 async def main():
     scanner = BleakScanner()
@@ -52,51 +73,38 @@ async def main():
                         break
 
                 if button_service:
-                    #Aボタンを使う
                     a_data = button_service.get_characteristic(UUID_BUTTON_ASTATE)
+                    b_data = button_service.get_characteristic(UUID_BUTTON_BSTATE)
                     async def change_A_STATE(sender,data):
                         global A_STATE
+                        global LAST_A_STATE
+                        global SCROLL_ON
+                        LAST_A_STATE=A_STATE
                         A_STATE=int.from_bytes(data)
+                        if LAST_A_STATE>=1 and A_STATE==0:
+                            if SCROLL_ON:
+                                SCROLL_ON=0
+                            else:
+                                SCROLL_ON=1
+                    async def change_B_STATE(sender,data):
+                        global B_STATE
+                        B_STATE=int.from_bytes(data)
                     await client.start_notify(a_data,change_A_STATE)
-                    print('push A-button')
-                    while True:
-                        try:
-                            if A_STATE>=1:
-                                break
-                            else:
-                                await asyncio.sleep(0.03)
-                        except KeyboardInterrupt:
-                            await client.stop_notify(a_data)
-                            break
-                    
-                    while True:
-                        try:
-                            if A_STATE==0:
-                                break
-                            else:
-                                await asyncio.sleep(0.03)
-                        except KeyboardInterrupt:
-                            await client.stop_notify(a_data)
-                            break
-                if accelerometer_service:
-                    data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
-                    initial_x,initial_y,initial_z=byte_to_acc(data)
-                    initial_theta=np.arctan2(-initial_z,-initial_x)
-                    while True:
-                        try:
-                            data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
-                            x,y,z=byte_to_acc(data)
-                            asyncio.create_task(tan_scroll(x,z,initial_theta))
-                            await asyncio.sleep(0.05)
-                            if A_STATE!=0:
-                                await client.stop_notify(a_data)
-                                break
-                        except KeyboardInterrupt:
-                            await client.stop_notify(a_data)
-                            #await client.stop_notify(data)
-                            break  
+                    await client.start_notify(b_data,change_B_STATE)
+                    print('push A-button to scroll')
                 else:
-                    print("service not found.")
+                    print("button service not found.")
+                    await client.disconnect()
+                
+                if accelerometer_service:
+                    asyncio.create_task(scroll(client))
+                    while True:
+                        try:
+                            await asyncio.sleep(0.1)
+                        except KeyboardInterrupt:
+                            break
+                else:
+                    print("acc service not found.")
                     await client.disconnect()
             except Exception as e:
                 print(f"Error: {e}")

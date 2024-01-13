@@ -25,7 +25,7 @@ async def tan_scroll(x,z,theta0):
     elif theta-theta0>np.pi:
         a=-2*np.pi
     sc=int((theta-theta0+a)*3)
-    print(theta,theta0)
+    #print(theta,theta0)
     pg.scroll(sc)
 
 
