@@ -4,7 +4,7 @@ import pyautogui as pg
 import matplotlib.pyplot as plt
 import numpy as np
 from time import sleep
-from function import byte_to_acc,tan_scroll
+from function import byte_to_acc,tan_scroll,tan_mag_shr,calc_norm,delete_window
 
 target_address = "C2783BD9-2103-65E8-DF49-0F483733120E" 
 target_address = "35B067D2-43F1-D6ED-2CC4-BA5761D51DB0"
@@ -19,29 +19,53 @@ UUID_BUTTON_BSTATE =  "e95dda91-251d-470a-a062-fa1922dfa9a8"
 A_STATE=0
 LAST_A_STATE=0
 B_STATE=0
+LAST_B_STATE=0
 SCROLL_ON=0
+BOP_ON=0
 
 async def scroll(client):
     global SCROLL_ON
-    init=1
+    global BOP_ON
+    sc_init=1
+    ms_init=1
     initial_theta=0
     while True: 
         try:
             data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
-            if SCROLL_ON:
-                if init==1:
-                    initial_x,initial_y,initial_z=byte_to_acc(data)
-                    initial_theta=np.arctan2(-initial_z,-initial_x)
-                    init=0
+            x,y,z=byte_to_acc(data)
+            norm=calc_norm(x,y,z)
+            if norm>3500:
+                asyncio.create_task(delete_window())
+                BOP_ON=0
+                SCROLL_ON=0
+                sc_init=1
+                ms_init=1
+                print(1)
+                await asyncio.sleep(1)
+                continue
+            elif SCROLL_ON:
+                if sc_init==1:
+                    initial_theta=np.arctan2(-z,-x)
+                    sc_init=0
                 else:
-                    x,y,z=byte_to_acc(data)
                     asyncio.create_task(tan_scroll(x,z,initial_theta))
+                await asyncio.sleep(0.05)
+            elif BOP_ON:
+                if ms_init==1:
+                    x,y,z=byte_to_acc(data)
+                    initial_theta=np.arctan2(-z,-x)
+                    ms_init=0
+                else:
+                    asyncio.create_task(tan_mag_shr(x,z,initial_theta))
+                await asyncio.sleep(0.05)
             else:
-                init=1
-            await asyncio.sleep(0.05)
+                ms_init=1
+                sc_init=1
+                await asyncio.sleep(0.05)
         except Exception as e:
                 print(f"Error: {e}")
-    
+                break
+
 
 async def main():
     scanner = BleakScanner()
@@ -79,6 +103,7 @@ async def main():
                         global A_STATE
                         global LAST_A_STATE
                         global SCROLL_ON
+                        global BOP_ON
                         LAST_A_STATE=A_STATE
                         A_STATE=int.from_bytes(data)
                         if LAST_A_STATE>=1 and A_STATE==0:
@@ -86,9 +111,20 @@ async def main():
                                 SCROLL_ON=0
                             else:
                                 SCROLL_ON=1
+                                BOP_ON=0
                     async def change_B_STATE(sender,data):
                         global B_STATE
+                        global LAST_B_STATE
+                        global BOP_ON
+                        global SCROLL_ON
+                        LAST_B_STATE=B_STATE
                         B_STATE=int.from_bytes(data)
+                        if LAST_B_STATE>=1 and B_STATE==0:
+                            if BOP_ON:
+                                BOP_ON=0
+                            else:
+                                BOP_ON=1
+                                SCROLL_ON=0
                     await client.start_notify(a_data,change_A_STATE)
                     await client.start_notify(b_data,change_B_STATE)
                     print('push A-button to scroll')

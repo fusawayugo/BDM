@@ -1,6 +1,7 @@
 import asyncio
 import pyautogui as pg
 import numpy as np
+import pywinctl as pwc
 
 def byte_to_acc(array):
     xyz=[0,0,0]
@@ -25,7 +26,38 @@ async def tan_scroll(x,z,theta0):
     elif theta-theta0>np.pi:
         a=-2*np.pi
     sc=int((theta-theta0+a)*3)
-    #print(theta,theta0)
     pg.scroll(sc)
+
+async def tan_mag_shr(x,z,theta0):
+    theta=np.arctan2(-z,-x)
+    a=0
+    if theta-theta0<-np.pi:
+        a=2*np.pi
+    elif theta-theta0>np.pi:
+        a=-2*np.pi
+    ms=theta-theta0+a
+    if ms>np.pi/3:
+        pg.hotkey('command','+','shift')#拡大できない
+    elif ms<-np.pi/3:
+        pg.hotkey('command','-')
+
+def calc_norm(x,y,z):
+    norm=np.linalg.norm(np.array([x,y,z]))
+    #print(norm)
+    return norm
+
+
+async def delete_window():
+    '''
+    window=pwc.getActiveWindow()
+    print(window)
+    window.close()
+    '''
+    pg.keyDown('command')
+    #pg.keyDown('shift')
+    pg.hotkey('w')
+    #pg.keyUp('shift')
+    pg.keyUp('command')
+
 
 

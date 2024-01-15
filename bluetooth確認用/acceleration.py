@@ -7,14 +7,13 @@ from time import sleep
 
 
 sys.path.append('../')
-from function import byte_to_xacc
+from function import byte_to_acc,calc_norm
 
 
 async def scroll(x):
     a_sc=-(x+1000)/200
     if abs(a_sc)>1:
         pg.scroll(int(a_sc))
-        print(a_sc,int(a_sc))
     pass
 
 
@@ -59,10 +58,10 @@ async def get_acceleration():
                     data_char = accelerometer_service.get_characteristic(UUID_ACCELEROMETER_DATA)
 
                     async def acceleration_handler(sender, data):
-                        x=byte_to_xacc(data)
+                        x,y,z=byte_to_acc(data)
                         # Process acceleration data here  
-                        #print(f"Acceleration: X={x}, Y={y}, Z={z},count={input_count}")
-                        await scroll(x)
+                        print(calc_norm(x,y,z))
+                        #await scroll(x)
                     
                     await client.start_notify(data_char, acceleration_handler)
 
@@ -76,13 +75,14 @@ async def get_acceleration():
                     while True:
                         try:
                             data = await client.read_gatt_char(UUID_ACCELEROMETER_DATA)
-                            x=byte_to_xacc(data)
-                            asyncio.create_task(scroll(x))
+                            x,y,z=byte_to_acc(data)
+                            asyncio.create_task(calc_norm(x,y,z))
+                            #print(x,y,z)
                             sleep(0.05)
                         except KeyboardInterrupt:
                             await client.stop_notify(data) #いらないかも
                             break  
-
+                    
                 else:
                     print("Accelerometer service not found.")
                     await client.disconnect()
