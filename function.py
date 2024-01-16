@@ -25,7 +25,7 @@ async def tan_scroll(x,z,theta0):
         a=2*np.pi
     elif theta-theta0>np.pi:
         a=-2*np.pi
-    sc=int((theta-theta0+a)*3)
+    sc=int((theta-theta0+a)*4)
     pg.scroll(sc)
 
 async def tan_mag_shr(x,z,theta0):
@@ -36,9 +36,14 @@ async def tan_mag_shr(x,z,theta0):
     elif theta-theta0>np.pi:
         a=-2*np.pi
     ms=theta-theta0+a
-    if ms>np.pi/3:
-        pg.hotkey('command','+','shift')#拡大できない
-    elif ms<-np.pi/3:
+    if ms>np.pi/5:
+        pg.keyDown('command')
+        pg.keyDown('shift')
+        pg.hotkey(';')
+        pg.keyUp('shift')
+        pg.keyUp('command')
+        #拡大できない
+    elif ms<-np.pi/5:
         pg.hotkey('command','-')
 
 def calc_norm(x,y,z):
