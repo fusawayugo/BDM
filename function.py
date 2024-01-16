@@ -37,11 +37,7 @@ async def tan_mag_shr(x,z,theta0):
         a=-2*np.pi
     ms=theta-theta0+a
     if ms>np.pi/5:
-        pg.keyDown('command')
-        pg.keyDown('shift')
-        pg.hotkey(';')
-        pg.keyUp('shift')
-        pg.keyUp('command')
+        pg.hotkey('command','shift',';')
         #拡大できない
     elif ms<-np.pi/5:
         pg.hotkey('command','-')
@@ -58,11 +54,8 @@ async def delete_window():
     print(window)
     window.close()
     '''
-    pg.keyDown('command')
-    #pg.keyDown('shift')
-    pg.hotkey('w')
-    #pg.keyUp('shift')
-    pg.keyUp('command')
+    pg.hotkey('command','w')
+
 
 
 

@@ -40,7 +40,6 @@ async def scroll(client):
                 SCROLL_ON=0
                 sc_init=1
                 ms_init=1
-                print(1)
                 await asyncio.sleep(1)
                 continue
             elif SCROLL_ON:
