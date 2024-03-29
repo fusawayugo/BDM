@@ -9,6 +9,6 @@ deactivate
 
 インストールすべきもの
 
-pip install keyboard
+pip install keyboard?
 pip install bleak
 pip install pyautogui
