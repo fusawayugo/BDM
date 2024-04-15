@@ -20,6 +20,8 @@ python3 main.py
 ```
 で起動する
 
+ctrl+Cで切れる
+
 ## バージョン(念の為)
 
 - Ubuntu
