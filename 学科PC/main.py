@@ -69,7 +69,6 @@ async def scroll(client):
 async def main():
     scanner = BleakScanner()
     devices = await scanner.discover()
-
     target_device = None
     for device in devices:
         #print(f"Device name: {device.name} / Device address: {device.address}")
@@ -96,8 +95,6 @@ async def main():
                             break
                 except BleakError as e:
                     print("Error:", e)
-            
-                print(1)
                 if button_service:
                     a_data = button_service.get_characteristic(UUID_BUTTON_ASTATE)
                     b_data = button_service.get_characteristic(UUID_BUTTON_BSTATE)
@@ -132,7 +129,7 @@ async def main():
                     print('push A-button to scroll')
                 else:
                     print("button service not found.")
-                    await client.disconnect()
+                    await client.disco#import pywinctl as pwcnnect()
                 
                 if accelerometer_service:
                     asyncio.create_task(scroll(client))

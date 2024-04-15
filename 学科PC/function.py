@@ -1,7 +1,5 @@
-import asyncio
 import pyautogui as pg
 import numpy as np
-#import pywinctl as pwc
 
 def byte_to_acc(array):
     xyz=[0,0,0]
