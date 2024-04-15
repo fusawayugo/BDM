@@ -110,7 +110,7 @@ async def main():
                         A_STATE=int.from_bytes(data,byteorder='little')
                         if LAST_A_STATE>=1 and A_STATE==0:
                             if SCROLL_ON:
-                                SCROLL_import matplotlib.pyplot as pltON=0
+                                SCROLL_ON=0
                             else:
                                 SCROLL_ON=1
                                 BOP_ON=0
