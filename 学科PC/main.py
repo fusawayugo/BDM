@@ -56,7 +56,7 @@ async def scroll(client):
                     ms_init=0
                 else:
                     asyncio.create_task(tan_mag_shr(x,z,initial_theta))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.2)
             else:
                 ms_init=1
                 sc_init=1
